@@ -1,0 +1,26 @@
+---
+applications:
+- name: BTP-PY
+  random-route: true
+  path: ./
+  memory: 128M
+  buildpack: python_buildpack
+  command: python server.py
+  services:
+  - pyuaa
+- name: web
+  random-route: true
+  path: web
+  memory: 128M
+  env:
+    destinations: >
+      [
+        {
+          "name":"myapp",
+          "url":"https://api.cf.us10-001.hana.ondemand.com",
+          "forwardAuthToken": true
+        }
+      ]
+  services:
+  - pyuaa
+

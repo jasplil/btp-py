@@ -1,0 +1,9 @@
+{
+  "routes": [
+    {
+      "source": "^/BTP-PY/(.*)$",
+      "target": "$1",
+      "destination": "BTP-PY"
+    }
+  ]
+}
