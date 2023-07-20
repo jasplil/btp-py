@@ -1,9 +1,9 @@
 {
   "routes": [
     {
-      "source": "^/BTP-PY/(.*)$",
+      "source": "^/myapp/(.*)$",
       "target": "$1",
-      "destination": "BTP-PY"
+      "destination": "myapp"
     }
   ]
 }

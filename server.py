@@ -1,54 +1,45 @@
 import os
 from flask import Flask
+from flask import request
+from flask import abort
+
+from cfenv import AppEnv
+from hdbcli import dbapi
+from sap import xssec
 
 app = Flask(__name__)
+env = AppEnv()
 
-stores = [{"name": "My Store", "items": [{"name": "Chair", "price": 15.99}]}]
+hana_service = 'hana'
+hana = env.get_service(label='hana')
+uaa_service = env.get_service(name='pyuaa').credentials
 
 port = int(os.environ.get('PORT', 3000))
 
 @app.route('/')
 def hello():
-    return "Hello World!"
+    if 'authorization' not in request.headers:
+        abort(403)
+    access_token = request.headers.get('authorization')[7:]
+    security_context = xssec.create_security_context(access_token, uaa_service)
+    isAuthorized = security_context.check_scope('openid')
+    if not isAuthorized:
+        abort(403)
 
-@app.get("/store")
-def get_stores():
-    return {"stores": stores}
+    conn = dbapi.connect(address=hana.credentials['host'],
+                           port=int(hana.credentials['port']),
+                           user=hana.credentials['user'],
+                           password=hana.credentials['password'],
+                           encrypt='true',
+                           sslTrustStore=hana.credentials['certificate'])
 
+    cursor = conn.cursor()
+    cursor.execute("select CURRENT_UTCTIMESTAMP from DUMMY")
+    ro = cursor.fetchone()
+    cursor.close()
+    conn.close()
 
-# @app.post("/store")
-# def create_store():
-#     request_data = request.get_json()
-#     new_store = {"name": request_data["name"], "items": []}
-#     stores.append(new_store)
-#     return new_store, 201
-
-
-# @app.post("/store/<string:name>/item")
-# def create_item(name):
-#     request_data = request.get_json()
-#     for store in stores:
-#         if store["name"] == name:
-#             new_item = {"name": request_data["name"], "price": request_data["price"]}
-#             store["items"].append(new_item)
-#             return new_item, 201
-#     return {"message": "Store not found"}, 404
-
-
-# @app.get("/store/<string:name>")
-# def get_store(name):
-#     for store in stores:
-#         if store["name"] == name:
-#             return store
-#     return {"message": "Store not found"}, 404
-
-
-# @app.get("/store/<string:name>/item")
-# def get_item_in_store(name):
-#     for store in stores:
-#         if store["name"] == name:
-#             return {"items": store["items"]}
-#     return {"message": "Store not found"}, 404
+    return "Current time is: " + str(ro["CURRENT_UTCTIMESTAMP"])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port)

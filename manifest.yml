@@ -17,10 +17,11 @@ applications:
       [
         {
           "name":"myapp",
-          "url":"https://api.cf.us10-001.hana.ondemand.com",
+          "url":"https://web-bright-alligator-yk.cfapps.us10-001.hana.ondemand.com",
           "forwardAuthToken": true
         }
       ]
   services:
   - pyuaa
+  - pyhana
 
